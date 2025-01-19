@@ -44,7 +44,7 @@ const job = CronJob.from({
         embed.addFields(...traders.buyable.map(item => {
             return {
                 name: item.item,
-                value: `Supply: **${item.maximumAmount}** (${item.maximumAmountPerPlayer}/player) - Cost: ${item.value}g`,
+                value: `Supply: **${item.maximumAmount}** (${item.maximumAmountPerPlayer}/player) - Cost: **${item.value}g**`,
             }
         }))
         embed.setTimestamp(new Date());
