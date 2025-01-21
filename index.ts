@@ -30,10 +30,15 @@ const saveResponseToFile = (response: sb.Traders) => {
     fs.writeFileSync('data.json', JSON.stringify(data, null, 4))
 }
 
+let lastTraderId = 0;
+
 const job = CronJob.from({
 	cronTime: '5 1 * * * *',
 	onTick: async function () {
         const traders = await sb.getTraders('skyblock')
+        if (traders?.entityId == lastTraderId) return;
+        lastTraderId = traders?.entityId ?? 0
+        
         if (!traders?.active) return console.log(`[${new Date().toISOString()}] traders is inactive.`);
         
         saveResponseToFile(traders)
