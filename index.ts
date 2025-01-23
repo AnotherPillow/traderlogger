@@ -22,7 +22,7 @@ const saveResponseToFile = (response: sb.Traders) => {
         response,
     }
     data.traders.push(item)
-    if (response.sellable.some( x => x.item == 'NETHERITE_SCRAP')) {
+    if (response.buyable.some( x => x.item == 'NETHERITE_SCRAP')) {
         data.totalScrap++;
         console.log(`[${new Date().toISOString()}] scrap!`);
     }
