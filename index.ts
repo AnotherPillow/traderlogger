@@ -5,7 +5,7 @@ import { CronJob } from 'cron';
 import sb from 'skyblock.js'
 import { EmbedBuilder } from 'discord.js'
 
-const { DISCORD_WEBHOOK_URL } = process.env
+const { DISCORD_WEBHOOK_URL, NOTIFICATION_ROLE_ID } = process.env
 
 if (!fs.existsSync('data.json')) {
     fs.writeFileSync('data.json', JSON.stringify({
@@ -16,7 +16,8 @@ if (!fs.existsSync('data.json')) {
 
 let data = JSON.parse(fs.readFileSync('data.json').toString())
 
-const saveResponseToFile = (response: sb.Traders) => {
+const saveResponseToFile = (response: sb.Traders): boolean => {
+    let returnValue = false
     const item = {
         timestamp: new Date().toISOString(),
         response,
@@ -25,9 +26,11 @@ const saveResponseToFile = (response: sb.Traders) => {
     if (response.buyable.some( x => x.item == 'NETHERITE_SCRAP')) {
         data.totalScrap++;
         console.log(`[${new Date().toISOString()}] scrap!`);
+        returnValue = true
     }
     
     fs.writeFileSync('data.json', JSON.stringify(data, null, 4))
+    return returnValue
 }
 
 let lastTraderId = 0;
@@ -41,7 +44,7 @@ const job = CronJob.from({
         
         if (!traders?.active) return console.log(`[${new Date().toISOString()}] traders is inactive.`);
         
-        saveResponseToFile(traders)
+        const isScrap = saveResponseToFile(traders)
         
         const embed = new EmbedBuilder()
         embed.setTitle(`Trader Spawned!`);
@@ -54,11 +57,14 @@ const job = CronJob.from({
         }))
         embed.setTimestamp(new Date());
         
+        const webBody = {
+            embeds: [ embed.toJSON() ]
+        } as { embeds: any[], content?: string}
+
+        if (isScrap) webBody.content = `<@&${NOTIFICATION_ROLE_ID}>`
+
         fetch(DISCORD_WEBHOOK_URL!, {
-            body: JSON.stringify({
-                // content: 't',
-                embeds: [ embed.toJSON() ]
-            }),
+            body: JSON.stringify(webBody),
             headers: {
                 'Content-Type': 'application/json',
             },
