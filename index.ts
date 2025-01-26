@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import * as fs from 'node:fs';
+import * as fsp from 'node:fs/promises'
 import { CronJob } from 'cron';
 
 import sb from 'skyblock.js'
@@ -16,21 +17,23 @@ if (!fs.existsSync('data.json')) {
 
 let data = JSON.parse(fs.readFileSync('data.json').toString())
 
-const saveResponseToFile = (response: sb.Traders): boolean => {
-    let returnValue = false
-    const item = {
-        timestamp: new Date().toISOString(),
-        response,
-    }
-    data.traders.push(item)
-    if (response.buyable.some( x => x.item == 'NETHERITE_SCRAP')) {
-        data.totalScrap++;
-        console.log(`[${new Date().toISOString()}] scrap!`);
-        returnValue = true
-    }
-    
-    fs.writeFileSync('data.json', JSON.stringify(data, null, 4))
-    return returnValue
+const saveResponseToFile = (response: sb.Traders): Promise<boolean> => {
+    return new Promise(async (resolve) => {
+        let returnValue = false
+        const item = {
+            timestamp: new Date().toISOString(),
+            response,
+        }
+        data.traders.push(item)
+        if (response.buyable.some( x => x.item == 'NETHERITE_SCRAP')) {
+            data.totalScrap++;
+            console.log(`[${new Date().toISOString()}] scrap!`);
+            returnValue = true
+        }
+        
+        await fsp.writeFile('data.json', JSON.stringify(data, null, 4))
+        resolve(returnValue)
+    })
 }
 
 let lastTraderId = 0;
@@ -44,7 +47,7 @@ const job = CronJob.from({
         
         if (!traders?.active) return console.log(`[${new Date().toISOString()}] traders is inactive.`);
         
-        const isScrap = saveResponseToFile(traders)
+        const isScrap = await saveResponseToFile(traders)
         
         const embed = new EmbedBuilder()
         embed.setTitle(`Trader Spawned!`);
